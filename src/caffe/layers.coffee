@@ -192,6 +192,47 @@ class @DeconvolutionLayer extends ConvolutionLayerBase
             outDim = stride[ii] * (input[i] - 1) + kernelExtent - 2 * padding[ii]
             output[i] = Math.floor outDim
 
+layers.Reshape =
+class @ReshapeLayer
+    constructor: (attribs) ->
+        params = attribs?.reshape_param
+        if not params?
+            throw 'Reshape layer must have reshape_param.'
+        reshape_shape = attribs?.reshape_param?.shape
+        if not reshape_shape?
+            throw 'Reshape layer must have shape in reshape_param'
+        @dims = attribs?.reshape_param?.shape?.dim
+        if not @dims?
+            throw "Reshape layer must have dims in shape in reshape param" 
+    inferShapes: (bottoms, tops) =>
+        inputShape = bottoms[0].shape
+        outputShape = []
+        # the index of the dimention that we need to infer from the other inputs
+        inferDimIndex = []
+        inputSize = 1 
+        for i in [0...inputShape.length]
+            inputSize = inputSize * inputShape[i]
+        # Calculate the infer size
+        inferSize = inputSize
+        dimsSize = @dims.length
+        for i in [0...dimsSize]
+            if @dims[i] == 0
+                outputShape.push(inputShape[i])
+                inferSize = inferSize/inputShape[i]
+            else 
+                if @dims[i] == -1
+                    outputShape.push(-1)
+                    inferDimIndex.push(i)
+                else
+                    outputShape.push(@dims[i])
+                    inferSize = inferSize/@dims[i]
+        if inferDimIndex.length > 1
+            throw "At most one -1 can be used in a reshape operation."
+        else
+            if inferDimIndex.length == 1
+                outputShape[inferDimIndex[0]] = inferSize 
+        tops[0].shape = outputShape
+
 layers.Pooling =
 class @PoolingLayer
     constructor: (attribs) ->

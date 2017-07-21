@@ -823,6 +823,63 @@ layers.Deconvolution = this.DeconvolutionLayer = (function(superClass) {
 
 })(ConvolutionLayerBase);
 
+layers.Reshape = this.ReshapeLayer = (function() {
+  function ReshapeLayer(attribs) {
+    this.inferShapes = bind(this.inferShapes, this);
+    var params, ref, ref1, ref2, reshape_shape;
+    params = attribs != null ? attribs.reshape_param : void 0;
+    if (params == null) {
+      throw 'Reshape layer must have reshape_param.';
+    }
+    reshape_shape = attribs != null ? (ref = attribs.reshape_param) != null ? ref.shape : void 0 : void 0;
+    if (reshape_shape == null) {
+      throw 'Reshape layer must have shape in reshape_param';
+    }
+    this.dims = attribs != null ? (ref1 = attribs.reshape_param) != null ? (ref2 = ref1.shape) != null ? ref2.dim : void 0 : void 0 : void 0;
+    if (this.dims == null) {
+      throw "Reshape layer must have dims in shape in reshape param";
+    }
+  }
+
+  ReshapeLayer.prototype.inferShapes = function(bottoms, tops) {
+    var dimsSize, i, inferDimIndex, inferSize, inputShape, inputSize, j, k, outputShape, ref, ref1;
+    inputShape = bottoms[0].shape;
+    outputShape = [];
+    inferDimIndex = [];
+    inputSize = 1;
+    for (i = j = 0, ref = inputShape.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
+      inputSize = inputSize * inputShape[i];
+    }
+    inferSize = inputSize;
+    dimsSize = this.dims.length;
+    for (i = k = 0, ref1 = dimsSize; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
+      if (this.dims[i] === 0) {
+        outputShape.push(inputShape[i]);
+        inferSize = inferSize / inputShape[i];
+      } else {
+        if (this.dims[i] === -1) {
+          outputShape.push(-1);
+          inferDimIndex.push(i);
+        } else {
+          outputShape.push(this.dims[i]);
+          inferSize = inferSize / this.dims[i];
+        }
+      }
+    }
+    if (inferDimIndex.length > 1) {
+      throw "At most one -1 can be used in a reshape operation.";
+    } else {
+      if (inferDimIndex.length === 1) {
+        outputShape[inferDimIndex[0]] = inferSize;
+      }
+    }
+    return tops[0].shape = outputShape;
+  };
+
+  return ReshapeLayer;
+
+})();
+
 layers.Pooling = this.PoolingLayer = (function() {
   function PoolingLayer(attribs) {
     this.getKernelSizes = bind(this.getKernelSizes, this);

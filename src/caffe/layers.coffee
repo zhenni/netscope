@@ -218,20 +218,25 @@ class @ReshapeLayer
         for i in [0...dimsSize]
             if @dims[i] == 0
                 outputShape.push(inputShape[i])
-                inferSize = inferSize/inputShape[i]
+                inferSize = @checkDivide inferSize, inputShape[i]
             else 
                 if @dims[i] == -1
                     outputShape.push(-1)
                     inferDimIndex.push(i)
                 else
                     outputShape.push(@dims[i])
-                    inferSize = inferSize/@dims[i]
+                    inferSize = @checkDivide inferSize, @dims[i]
         if inferDimIndex.length > 1
             throw "At most one -1 can be used in a reshape operation."
         else
             if inferDimIndex.length == 1
                 outputShape[inferDimIndex[0]] = inferSize 
         tops[0].shape = outputShape
+    checkDivide: (a, b) =>
+        ans = a / b
+        if a % b != 0
+            throw "Reshape Layer Dimention Error"
+        return ans 
 
 layers.Pooling =
 class @PoolingLayer

@@ -825,6 +825,7 @@ layers.Deconvolution = this.DeconvolutionLayer = (function(superClass) {
 
 layers.Reshape = this.ReshapeLayer = (function() {
   function ReshapeLayer(attribs) {
+    this.checkDivide = bind(this.checkDivide, this);
     this.inferShapes = bind(this.inferShapes, this);
     var params, ref, ref1, ref2, reshape_shape;
     params = attribs != null ? attribs.reshape_param : void 0;
@@ -855,14 +856,14 @@ layers.Reshape = this.ReshapeLayer = (function() {
     for (i = k = 0, ref1 = dimsSize; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
       if (this.dims[i] === 0) {
         outputShape.push(inputShape[i]);
-        inferSize = inferSize / inputShape[i];
+        inferSize = this.checkDivide(inferSize, inputShape[i]);
       } else {
         if (this.dims[i] === -1) {
           outputShape.push(-1);
           inferDimIndex.push(i);
         } else {
           outputShape.push(this.dims[i]);
-          inferSize = inferSize / this.dims[i];
+          inferSize = this.checkDivide(inferSize, this.dims[i]);
         }
       }
     }
@@ -874,6 +875,15 @@ layers.Reshape = this.ReshapeLayer = (function() {
       }
     }
     return tops[0].shape = outputShape;
+  };
+
+  ReshapeLayer.prototype.checkDivide = function(a, b) {
+    var ans;
+    ans = a / b;
+    if (a % b !== 0) {
+      throw "Reshape Layer Dimention Error";
+    }
+    return ans;
   };
 
   return ReshapeLayer;
